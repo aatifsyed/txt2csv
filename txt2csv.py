@@ -7,22 +7,28 @@ import sys
 import argparse
 
 listofmodes = {
-    "example" : [
-        r"\) (?P<match>[\/a-zA-Z0-9_\.]*?),", # Matches path
-        r"line (?P<match>[0-9]*?)$" # Matches lines number
+    "backtrace" : [
+        r"[\)\]] (?P<match>[\/a-zA-Z0-9_\.]*?),", # Matches path
+        r"line (?P<match>.*?)$" # Matches lines number
+    ],
+    "bricksoverview" : [
+        r"^(?P<match>[0-9]*?) : ", # Match call load
+        r"Packet Loss: (?P<match>.*?)%",
+        r"Average Delay: (?P<match>.*?)us",
+        r"Maximum Delay: (?P<match>.*?)us"
     ]
 }
 
 def getinput():
     """
     Returns a list of non-blank lines, without newlines
-
-    Fileinput.input() fetches from stdin or filename arguments
     """
-    listoflines = []
     if not sys.stdin.isatty(): # We've been piped input
         listoflines = sys.stdin.readlines()
-    listoflines = list(filter(lambda x: x != "\n", listoflines))
+    else:
+        raise Exception("\nCouldn't read anything from stdin\n\nTry piping to this program\ncat yourfile | txt2csv -m example")
+    listoflines = list(map(lambda x: x.rstrip("\n"), listoflines))
+    listoflines = list(filter(lambda x: x != "", listoflines))
     return listoflines
 
 def applyregexes(mode, line):
@@ -48,15 +54,22 @@ def applyregexes(mode, line):
             matches.append("") # Add an empty string so columns match
     return matches
 
-parser = argparse.ArgumentParser(description="Returns a comma-separated line for each line from stdin.")
-parser.add_argument("--mode", "-m", required = True, help="Set of regular expressions to use. For each regular expression in that set, a single comma-separated value is added to the line")
-args = parser.parse_args()
+def arguments():
+    """
+    Wrapper for argument parser to make main more readable
+    """
+    parser = argparse.ArgumentParser(description="Returns a comma-separated line for each line from stdin.")
+    parser.add_argument("--mode", "-m", required = True, help="Required: Set of regular expressions to use. For each regular expression in that set, a single comma-separated value is added to the line")
+    parser.add_argument("--separator", "-s", default=",", help="Optional: specify a separator string other than a comma")
+    return parser.parse_args()
+
+args = arguments()
+mode = args.mode
+separator = args.separator
 
 listoflines = getinput()
 
-mode = "example"
-
 for line in listoflines:
     listofvalues = applyregexes(mode, line)
-    commaseparatedline = ",".join(listofvalues)
+    commaseparatedline = separator.join(listofvalues)
     print(commaseparatedline)
