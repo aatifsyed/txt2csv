@@ -63,13 +63,17 @@ def arguments():
     parser.add_argument("--separator", "-s", default=",", help="Optional: specify a separator string other than a comma")
     return parser.parse_args()
 
-args = arguments()
-mode = args.mode
-separator = args.separator
+def txt2csv():
+    args = arguments()
+    mode = args.mode
+    separator = args.separator
 
-listoflines = getinput()
+    listoflines = getinput()
 
-for line in listoflines:
-    listofvalues = applyregexes(mode, line)
-    commaseparatedline = separator.join(listofvalues)
-    print(commaseparatedline)
+    for line in listoflines:
+        listofvalues = applyregexes(mode, line)
+        commaseparatedline = separator.join(listofvalues)
+        print(commaseparatedline)
+
+if (__name__ == "__main__"):
+    txt2csv()
